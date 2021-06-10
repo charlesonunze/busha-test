@@ -1,14 +1,20 @@
 package handler
 
 import (
+	"github.com/charlesonunze/busha-test/services"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetMovies(c *fiber.Ctx) error {
+	movies, err := services.GetMovies()
+	if err != nil {
+		return err
+	}
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"message": "Movies list",
-		"data":    "movies",
+		"data":    movies,
 	})
 }
 

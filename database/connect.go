@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 
+	"github.com/charlesonunze/busha-test/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,6 +16,7 @@ func ConnectDB() {
 	}
 
 	fmt.Println("Connection Opened to Database")
+	DB.AutoMigrate(&model.Movie{}, &model.Comment{})
 	fmt.Println("Database Migrated")
 }
 
