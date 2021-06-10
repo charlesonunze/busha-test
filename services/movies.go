@@ -3,11 +3,14 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/charlesonunze/busha-test/database"
 	"github.com/charlesonunze/busha-test/model"
+	"github.com/charlesonunze/busha-test/utils"
 	"github.com/go-redis/redis"
 	"github.com/go-resty/resty/v2"
 )
@@ -124,4 +127,60 @@ func GetComments(movieId string) ([]model.Comment, error) {
 	result := db.Where("movie_id = ?", movieId).Order("created_at desc").Find(&comments)
 
 	return comments, result.Error
+}
+
+func GetCharacters(movieId string) ([]model.Character, error) {
+	url := baseURL + "/people"
+	characterResponse := &model.CharacterResponse{}
+	results := []model.Character{}
+	key := "chars_list"
+
+	data, err := FetchCharsFromCache(key)
+	if err != nil {
+		return results, err
+	}
+
+	if len(data) > 0 {
+		return data, err
+	}
+
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return results, err
+	}
+
+	movieURL := "http://swapi.dev/api/films/" + movieId + "/"
+
+	err = json.Unmarshal([]byte(resp.Body()), &characterResponse)
+	if err != nil {
+		return results, err
+	}
+
+	for _, c := range characterResponse.Results {
+		if utils.Contains(c.Films, movieURL) {
+			height, err := strconv.Atoi(c.Height)
+			if err != nil {
+				return results, err
+			}
+
+			heightInCm, err := strconv.Atoi(c.Height)
+			if err != nil {
+				return results, err
+			}
+
+			feet, inches := utils.ConvertToFeet(height)
+
+			c.HeightInCm = heightInCm
+			c.Height = fmt.Sprintf("%s%s %.0f%s %.2f%s", c.Height, "cm or", feet, "ft and", inches, "inches")
+
+			results = append(results, c)
+		}
+	}
+
+	err = StoreCharsInCache(results, key)
+	if err != nil {
+		return results, err
+	}
+
+	return results, nil
 }

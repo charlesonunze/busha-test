@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/charlesonunze/busha-test/services"
+	"github.com/charlesonunze/busha-test/utils"
 	"github.com/charlesonunze/busha-test/validators"
 	"github.com/gofiber/fiber/v2"
 )
@@ -82,9 +83,52 @@ func ListCommentsForMovie(c *fiber.Ctx) error {
 }
 
 func ListCharactersForMovie(c *fiber.Ctx) error {
+	sortBy := c.Query("sort_by")
+	sortOrder := c.Query("order")
+	gender := c.Query("gender")
+
+	movieId := c.Params("movieId")
+	mID, err := services.FindMovie(movieId)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+			"data":    nil,
+		})
+	}
+
+	characters, err := services.GetCharacters(mID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+			"data":    nil,
+		})
+	}
+
+	characters, err = utils.Sort(sortBy, sortOrder, characters)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"success": false,
+			"message": err.Error(),
+			"data":    nil,
+		})
+	}
+
+	if len(gender) > 1 {
+		characters, err = utils.FilterByGender(characters, gender)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"success": false,
+				"message": err.Error(),
+				"data":    nil,
+			})
+		}
+	}
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"message": "Characters list",
-		"data":    "characters",
+		"data":    characters,
 	})
 }
