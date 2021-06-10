@@ -22,7 +22,7 @@ func StoreInCache(data []model.Movie, key string) error {
 		return err
 	}
 
-	err = client.Set(key, json, 1*time.Minute).Err()
+	err = client.Set(key, json, 24*time.Hour).Err()
 	if err != nil {
 		return err
 	}

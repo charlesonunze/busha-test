@@ -2,16 +2,20 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
+	"time"
 
 	"github.com/charlesonunze/busha-test/database"
 	"github.com/charlesonunze/busha-test/model"
+	"github.com/go-redis/redis"
 	"github.com/go-resty/resty/v2"
 )
 
 var (
 	baseURL    = "https://swapi.dev/api"
 	httpClient = resty.New().R()
+	userIp     string
 )
 
 func GetMovies() ([]model.Movie, error) {
@@ -68,4 +72,56 @@ func GetCommentsCount(movieId string) (int64, error) {
 	result := db.Where("movie_id = ?", movieId).Find(&comments)
 
 	return result.RowsAffected, result.Error
+}
+
+func CreateComment(body, movieId string) (model.Comment, error) {
+	var comment model.Comment
+
+	comment.MovieId = movieId
+	comment.Body = body
+	comment.UserIp = userIp
+
+	result := database.DB.Create(&comment)
+
+	return comment, result.Error
+}
+
+func FindMovie(movieId string) (string, error) {
+	val, err := client.Get(movieId).Result()
+
+	if err == redis.Nil {
+		url := baseURL + "/films/" + movieId
+		resp, err := httpClient.EnableTrace().Get(url)
+		if err != nil {
+			return val, err
+		}
+
+		userIp = resp.Request.TraceInfo().RemoteAddr.String()
+
+		if resp.StatusCode() == 404 {
+			return val, errors.New("movie not found")
+		}
+
+		err = client.Set(movieId, movieId, 24*time.Hour).Err()
+		if err != nil {
+			return val, err
+		}
+
+		return movieId, err
+	}
+
+	if err != nil {
+		return val, err
+	}
+
+	return val, nil
+}
+
+func GetComments(movieId string) ([]model.Comment, error) {
+	db := database.DB
+	var comments []model.Comment
+
+	result := db.Where("movie_id = ?", movieId).Order("created_at desc").Find(&comments)
+
+	return comments, result.Error
 }
