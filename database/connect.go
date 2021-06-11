@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/charlesonunze/busha-test/model"
 	"gorm.io/driver/postgres"
@@ -10,7 +11,7 @@ import (
 
 func ConnectDB() {
 	var err error
-	DB, err = gorm.Open(postgres.Open("postgres://mpgzeajm:W4HnsFei0jSRGhhGfsQ9JkN6H4BofTLJ@batyr.db.elephantsql.com/mpgzeajm"))
+	DB, err = gorm.Open(postgres.Open(os.Getenv("POSTGRES_URI")))
 	if err != nil {
 		panic(err)
 	}

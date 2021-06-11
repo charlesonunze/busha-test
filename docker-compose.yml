@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  app:
+    container_name: busha_test
+    build: .
+    ports:
+      - '3000:3000'
+    restart: on-failure
+    env_file: .env
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    links:
+      - db
+      - redis
+
+  db:
+    image: postgres
+    container_name: postgres
+    ports:
+      - '5432:5432'
+    env_file: .env
+
+  redis:
+    image: redis
+    container_name: redis
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock    
+    ports:
+      - 6379:6379 

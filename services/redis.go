@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/charlesonunze/busha-test/model"
@@ -10,7 +11,7 @@ import (
 
 var (
 	client = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     os.Getenv("REDIS_URI"),
 		Password: "",
 		DB:       0,
 	})

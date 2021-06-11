@@ -12,5 +12,8 @@
 *.out
 *tmp/
 
+# dotenv environment variables file
+.env
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
